@@ -1,0 +1,59 @@
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>File Upload with Separate Button</title>
+  <link rel="stylesheet" href="/upload.css">
+</head>
+<body>
+  <div class="file-upload-wrapper">
+    <label for="fileInput" class="file-upload-button">Choose File</label>
+    <input type="file" id="fileInput" class="file-upload-input" />
+    <button id="uploadButton" class="upload-btn">Upload</button>
+    <div class="progress-bar" id="progressBar">
+      <span id="progressText">0%</span>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/tus-js-client/dist/tus.js"></script>
+  <script>
+    let selectedFile = null;
+
+    document.getElementById('fileInput').addEventListener('change', function(event) {
+      selectedFile = event.target.files[0];
+    });
+
+    document.getElementById('uploadButton').addEventListener('click', function() {
+      if (selectedFile) {
+        const upload = new tus.Upload(selectedFile, {
+          endpoint: 'http://localhost:4000/upload',
+          chunkSize: 1048576, // 1MB chunks
+          retryDelays: [0, 1000, 3000, 5000],
+          metadata: {
+            filename: selectedFile.name,
+            filetype: selectedFile.type
+          },
+          onError: function(error) {
+            console.log("Failed because: " + error);
+          },
+          onProgress: function(bytesUploaded, bytesTotal) {
+            const percentage = (bytesUploaded / bytesTotal * 100).toFixed(2);
+            document.getElementById('progressBar').firstElementChild.style.width = percentage + '%';
+            document.getElementById('progressText').textContent = percentage + '%';
+          },
+          onSuccess: function() {
+            console.log("Upload finished:", upload.url);
+          }
+        });
+
+        upload.start();
+      } else {
+        alert('Please select a file first.');
+      }
+    });
+  </script>
+</body>
+</html>
+
+
